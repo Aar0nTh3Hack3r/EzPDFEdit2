@@ -1,0 +1,863 @@
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>Edit</title>
+<style>
+body{
+	background: #0a005f;
+}
+*{
+	color: white;
+	user-select: none;
+}
+:root {
+    --main-height: 150px;
+    --preview: 500px;
+    --space: 10px;
+    --cheight: calc(6 /* <-- btnCount */ * 4em);
+}
+#div1, #div2, #div3{
+	position: absolute;
+	left: 0px;
+	height: calc(var(--main-height) + var(--space));
+	width: 100%;
+    overflow-x: auto;
+	overflow-y: hidden;
+    white-space: nowrap;
+}
+#div1{
+	top: 0px;
+	background: rgb(255,255,255,0.3);
+}
+#div2{
+	top: calc(var(--main-height) + var(--space));
+	background: rgb(0,0,0,0.3);
+}
+#div3{
+	top: calc(calc(var(--main-height) * 2) + calc(var(--space) * 2));
+	left: calc(50% - calc(var(--preview) / 2));
+	width: var(--preview);
+	height: var(--preview);
+	overflow: hidden;
+	background-color: rgb(255,255,255,0.3);
+	/*background-repeat: no-repeat;
+    background-size: contain;
+    cursor: url("/static/magnify.cur"), auto;*/
+    cursor: zoom-in;
+}
+@media screen and (max-width: 500px) {
+  #div3{
+    left: 0px;
+  }
+}
+img{
+    user-drag: none;
+    -webkit-user-drag: none;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    /*image-rendering: pixelated;*/
+}
+img.mini{
+	position: relative;
+	width: 100px;
+	height: var(--main-height);
+	margin-right: 1px;
+    margin-left: 1px;
+	border-top: solid 2px rgb(255,255,255,0.3);
+}
+img.selected{
+	/*width: 96px;
+	height: calc(var(--main-height) - 4);*/
+	border: solid 2px blue;
+}
+#big{
+    transform-origin: top left;
+    transform: scale(.5);
+    position: absolute;
+}
+@font-face {
+  font-family: 'olympusmount';
+  src: url('/static/Olympus_Mount.ttf');
+}
+#container > button{
+    cursor: pointer;
+    height: 2em;
+    font-family: olympusmount;
+    font-size: 2em;
+    background: blue;
+    position: relative;
+    width: 100%;
+}
+#container{
+    z-index: 1;
+    position: fixed;
+    overflow: hidden;
+    width: 10em;
+    left: 0px;
+    height: var(--cheight);
+    bottom: calc(0em - var(--cheight));
+    transition: bottom .3s;
+}
+.container2{
+    height: 4em;
+    position: relative;
+    width: 100%;
+}
+.container2 > button{
+    cursor: pointer;
+    height: 2em;
+    font-family: olympusmount;
+    font-size: 2em;
+    background: blue;
+    position: absolute;
+    top: 0px;
+    width: 50%;
+}
+#btn6{
+    left: 0px;
+}
+#btn7{
+    right: 0px;
+}
+#btnplus{
+    position: fixed;
+    border-radius: 50%;
+    left: 0px;
+	bottom: 0px;
+    width: 5em;
+    height: 5em;
+	background: blue;
+}
+#btnplus:hover ~ #container, #container:hover{
+    bottom: 0em;
+}
+#btnplus::after{
+    /*content: "+";*/
+    content: "🚀️";
+    position: absolute;
+    /*font-family: olympusmount;
+    font-size: 5em;
+    top: calc(50% - 1rem);
+    left: calc(50% - 1rem);*/
+    font-size: 3em;
+    top: calc(50% - 2rem);
+    left: calc(50% - 2.2rem);
+}
+a{
+    position:fixed;
+    bottom:5px;
+    right:5px;
+    cursor:pointer;
+}
+svg:hover > text{
+    fill: yellow;
+}
+svg:hover > circle{
+    stroke: yellow;
+}
+
+#bgscr{
+    z-index: 1;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    top: 100%;
+    left: 0%;
+    background: rgb(0,0,0,.7);
+    visibility: hidden;
+    transition: top 1s ease-in-out, visibility 1s;
+}
+@keyframes big{
+    0%:{width:50px;height:50px;}
+    50%{width:100px;height:100px;}
+    100%{width:200px;height:100px;}
+}
+@keyframes oval{
+    from{width:100px;height:200px;}
+    to{width:200px;height:100px;}
+}
+@keyframes rot{
+    from{transform:rotate(0deg);}
+    to{transform:rotate(360deg);}
+}
+span.start{
+    top: calc(var(--cx) - 50px) !important;
+    left:calc(var(--cy) - 50px) !important;
+    animation: oval .5s ease-in-out infinite calc(.5s + calc(.1s * var(--sleep))) alternate-reverse,
+                rot 3s linear infinite .1s,
+                big .5s linear calc(.1s * var(--sleep));
+}
+span.ellipse{
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    top: calc(var(--cx) - 25px);
+    left:calc(var(--cy) - 25px);
+    background: #00cc;
+    transform-origin: center;
+    transform-box: fill-box;
+    border-radius: 50%;
+    transition: top .3s, left .3s;
+}
+#x{
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    top: 10px;
+    right: 10px;
+    border-radius: 50%;
+    background: white;
+    cursor: pointer;
+    transition: background .1s;
+}
+#x::before, #x::after{
+    content: "";
+    width: 7.5px;
+    height: 30px;
+    position: absolute;
+    top: 5px;
+    left: 16px;
+    background: black;
+    border-radius: 5px;
+    transition: background .1s;
+}
+#x::before{
+    transform: rotate(45deg);
+}
+#x::after{
+    transform: rotate(-45deg);
+}
+#x:hover{
+    background: gray;
+}
+#x:hover::after, #x:hover::before{
+    background: cyan;
+    width: 5px;
+    height: 20px;
+    top: 9px;
+    left: 17px;
+}
+@keyframes blink{
+    from{background:rgb(246,246,246,.4);}
+    to{background:rgb(246,246,246,.6);}
+}
+#window{
+    z-index: 1;
+    visibility: hidden;
+    background: rgb(246,246,246,.5);
+    width: 75%;
+    height: 75%;
+    position: absolute;
+    top: -100%;
+    left: 12.5%;
+    border: inset 7.5px blue;
+    border-radius: 50px;
+    box-shadow: 25px 25px 50px #00c;
+    transition: top 1s, visibility 1s,
+                left 1s, width 1s, height 1s;
+    text-align: center;
+}
+#window > *{
+    transition: opacity .25s linear;
+    font-family: olympusmount;
+    font-size: 3em;
+}
+#window > p{
+    font-size: 2em;
+}
+#window button{
+    font-size: 20px;
+    width: 100px;
+    height: 50px;
+    color: darkblue;
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    border: outset 5px blue;
+    transition: opacity .25s linear .25s;
+    pointer-events: none;
+}
+#window button.back{
+    right: "";
+    left: 20px;
+}
+#window button::after{
+    content: "";
+    position: absolute;
+    background: rgb(50,50,50,.15);
+    border-radius: 5px;
+    width: 100%;
+    height:100%;
+    top: 0px;
+    left:0px;
+    clip-path: polygon(100% 0%, 100% 100%, 0% 100%);
+    opacity: 0;
+    transition: opacity .1s;
+}
+#window button:hover::after{
+    opacity: 1;
+}
+#window button:active{
+    border-style: inset;
+}
+#window button:active::after{
+    clip-path: polygon(100% 0%, 0% 0%, 0% 100%);;
+}
+#window button:disabled{
+    border-color: gray;
+    background: gray;
+    color: white;
+}
+#window button:disabled::after{
+    visibility: hidden;
+}
+#window.start{
+    animation: blink 1s infinite linear alternate-reverse;
+}
+@keyframes fadein{
+    from{opacity:0}
+    to{opacity:1}
+}
+.fadein{
+    animation: fadein .5s cubic-bezier(1, 0.1, 1, 1.16);
+}
+.fadeinfast{
+    animation: fadein .25s cubic-bezier(0.14, 0.87, 0.49, 0.74);
+}
+</style>
+<script>
+Array.prototype.swap = function(x,y){
+	[this[x], this[y]] = [this[y], this[x]];
+	return this;
+};
+
+const imgs = {{num}};
+var selected = 0, selected2 = -1;
+var div1, div2, div3, big;
+var im = [];
+var im2 = [];
+var id;
+var zoom = false;
+window.addEventListener('load', () => {
+	div1 = document.getElementById("div1");
+	div2 = document.getElementById("div2");
+	div3 = document.getElementById("div3");
+    big = document.getElementById("big");
+    div3.addEventListener('mousedown', e => {
+        zoom = true;
+        big.style.transform = 'scale(1)';
+        big.style.top = "";
+        big.style.left = "";
+        magnify(e);
+    });
+    document.addEventListener('mouseup', () => {
+        zoom = false;
+        big.style.bottom = "";
+        big.style.right = "";
+        big.style.top = 0;
+        big.style.left = 0;
+        big.style.transform = 'scale(.5)';
+    });
+    div3.addEventListener('mousemove', e => {
+        if(!zoom) return;
+        big.style.bottom = 0;
+        big.style.right = 0;
+        magnify(e);
+    });
+    div3.addEventListener('contextmenu', e => e.preventDefault());
+	for(let i=0;i<imgs;++i){
+		im.push(document.createElement('img'));
+		im[i].classList.add('mini');
+		im[i].name = i+'';
+		//im[i].classList.add('img');
+		im[i].addEventListener('click', imgClick);
+		//im[i].addEventListener('dblclick', imgDblClick);
+		im[i].src = i + ".jpg/";
+		div1.appendChild(im[i]);
+	}
+	if(imgs > 0){
+		select(0);
+	}
+	document.getElementById("btn").addEventListener('click', save);
+	//document.getElementById("btn2").addEventListener('click', save2);
+    document.getElementById("btn2").addEventListener('click', () => {
+        var l = location.pathname.split('/');
+        l[1] = "edit";
+        const w = open(l.join('/') + im[selected].name + ".jpg");
+        w.window.pag1 = window;
+        w.addEventListener('keydown', e => {if(e.key !== 'a' && e.ctrlKey || e.key === 'F5')e.preventDefault();});
+        var started = false;
+        w.window.addEventListener('unload', () => {if(started)w.close();else started=true});
+    });
+    document.getElementById("btn5").addEventListener('click', e => {
+        e.target.disabled = true;
+
+        fetch("restore", {
+            method: 'POST',
+		    body: "",
+	    })
+        .then(r => {return r.json();})
+	    .then(data => {
+            if(data['error'] == 0){
+                location.reload(true);
+            }
+            else{
+                alert(JSON.stringify(data));
+                e.target.disabled = false;
+            }
+        }).catch(e => alert(e + ""));
+    });
+    document.getElementById("btn3").addEventListener('click', delall);
+	document.getElementById("btn4").addEventListener('click', insall);
+
+    function imgchange(e){
+        imgname = im[selected].name;
+        e.target.disabled = true;
+
+        fetch(imgname + ".jpg/rotate", {
+            method: 'POST',
+		    body: e.target.id=="btn6"?"[1]":"[2]",
+            headers: {
+                'Content-Type': 'application/json'
+            },
+	    })
+        .then(r => {return r.json();})
+	    .then(data => {
+            if(data['error'] == 0){
+                //location.reload(true);
+                setTimeout(() =>
+                    fetch(imgname + ".jpg/", {headers: {'pragma':'no-cache','cache-control':'no-cache'}})
+                    .then(r => r.blob()).then(blob => {
+                        return new Promise((res, rej) => {
+                            const fr = new FileReader();
+                            fr.onerror = rej;
+                            fr.onload = () => res(fr.result);
+                            fr.readAsDataURL(blob);
+                        });
+                    }).then(data => {
+                        e.target.disabled = false;
+                        big.src = data;
+                        const imgs2 = document.getElementsByName(imgname);
+                        for(let i=0;i<imgs2.length;++i){
+                            imgs2[i].src = data;
+                        }
+                    })
+                    .catch(e => alert(e + ""))
+                , 250);
+            }
+            else{
+                alert(JSON.stringify(data));
+                e.target.disabled = false;
+            }
+        }).catch(err => alert(err + ""));
+    }
+
+    document.getElementById("btn6").addEventListener('click', imgchange);
+    document.getElementById("btn7").addEventListener('click', imgchange);
+
+    const params = new URLSearchParams(window.location.search);
+    if(params.has("pg")){
+        let pg = parseInt(params.get("pg"));
+        if(!isNaN(pg)){
+            if(pg > 0 && pg < imgs){
+                let event = new Object();
+			    event.target = im[pg];
+                imgClick(event);
+            }else topg();
+        }else topg();
+    }else topg();
+
+
+	let path = window.location.pathname;
+	id = path.slice(1,path.length-1).split('/')[1];
+	let m = localStorage.getItem(id);
+	if(m !== null){
+		let l = m.split('-');
+		for(let i=0;i<l.length;++i){
+			let event = new Object();
+			event.target = im[parseInt(l[i])];
+			imgDblClick(event);
+		}
+	}
+    if(localStorage.getItem("pro1") == null)setTimeout(help, 1000);
+});
+function topg(n=0){window.history.replaceState('','','?pg='+n);}
+
+var last = 0;
+var clicks = 0;
+function imgClick(e){
+	let t = parseInt(e.target.name);
+    topg(t);
+	last = 0;
+	if(t == selected){
+		if(++clicks % 2 != 0)
+			imgDblClick(e);
+	}else{
+		clicks = 0;
+		if(selected != -1)
+			im[selected].classList.remove("selected");
+		selected = t;
+		select(selected);
+		console.log(selected);
+	}
+
+}
+function imgDblClick(e, sve=true){
+	let t = parseInt(e.target.name);
+	let i = im2.length;
+	im2.push(document.createElement('img'));
+	im2[i].classList.add('mini');
+	im2[i].name = t+'';
+	im2[i].addEventListener('click', im2Click);
+	im2[i].src = t + ".jpg/";
+	div2.appendChild(im2[i]);
+    if(sve)save2();
+	console.log("double: " + t);
+}
+function select(i){
+	im[i].classList.add("selected");
+	//div3.style.backgroundImage = "url('" + i + ".jpg')";
+    big.src = i + ".jpg/";
+}
+function im2Click(e){
+	e.target.classList.add("selected");
+	let i = im2.indexOf(e.target);
+	last = 1;
+	if(i == selected2){
+		del(i);
+	}
+	else{
+		if(selected2 != -1)
+			im2[selected2].classList.remove("selected");
+		selected2 = i;
+	}
+}
+function del(i){
+	selected2 = -1;
+	im2[i].remove();
+	im2.splice(i, 1);
+    save2();
+}
+function save(){
+	let l1 = div2.getElementsByTagName("img");
+	if(l1.length == 0)return;
+	let l = [];
+	for(let i=0;i<l1.length;++i){
+		l.push(parseInt(l1[i].name));
+	}
+	console.log(l);
+	let a = document.createElement("a");
+	a.href = "export?data=" + l.join('-');
+    let d = new Date().toLocaleString().replace(/. /g,'').replace(/:/g,'');
+	a.download = true//"output_" + d + "_EzPDFEdit.pdf";
+    document.body.appendChild(a);
+	a.click();
+	a.remove();
+
+	while(l1.length){
+		l1[0].remove();
+	}
+	im2.splice(0,im2.length);
+    save2();
+}
+function save2(){
+	if(im2.length)
+		localStorage.setItem(id,im2.map(e=>e.name).join('-'));
+	else
+		localStorage.removeItem(id);
+	//alert("Saved!");
+}
+function delall(){
+    im2.splice(0,im2.length);
+	let l1 = div2.getElementsByTagName("img");
+	while(l1.length){
+	    l1[0].remove();
+	}
+    save2();
+}
+function insall(){
+    let event = new Object();
+    for(let i=0;i<im.length;++i){
+		event.target = im[i];
+		imgDblClick(event);
+    }
+    save2();
+}
+
+window.addEventListener('keyup', e => {
+	switch(e["key"]){
+		case "Delete":
+			if(last == 0){
+				im[selected].remove();
+				selected = -1;
+			}else{
+				del(selected2);
+			}
+			break;
+		case "Enter":
+			if(last == 0){
+				let event = new Object();
+				event.target = im[selected];
+				imgClick(event);
+			}else{
+				del(selected2);
+			}
+			break;
+		case "ArrowRight":
+			if(last == 1){
+				if(selected2 < im2.length-1){
+					div2.insertBefore(im2[selected2+1], im2[selected2]);
+					im2.swap(selected2,selected2+1);
+					++selected2;
+				}
+			}
+			break;
+		case "ArrowLeft":
+			if(last == 1){
+				if(selected2 > 0){
+					div2.insertBefore(im2[selected2], im2[selected2-1]);
+					im2.swap(selected2,selected2-1);
+					--selected2;
+				}
+			}
+			break;
+		case "Escape":
+			/*if(confirm("Delete All?")){
+				delall();
+			}*/closetut();
+			break;
+        case " ":
+            if(confirm("Insert All?")){
+			    insall();
+			}
+            break;
+	}
+});
+window.addEventListener('keydown', e => {
+    if(e.key == " " || e.key == "Enter")e.preventDefault();
+});
+
+function magnify(e){
+    //console.log(e);
+    //console.log(big.naturalWidth, big.naturalHeight);
+    var dim = div3.getBoundingClientRect();
+    var x = e.clientX - dim.left;
+    var y = e.clientY - dim.top;
+    big.style.right = x - 500 + 1000 - big.naturalWidth;
+    big.style.bottom = y - 500 + 1000 - big.naturalHeight;
+}
+
+function help(){
+    step0();
+}
+
+function unlock(){
+    let temp = fg.getElementsByTagName("button");
+    for(let i=0;i<temp.length;++i) temp[i].style.pointerEvents = "auto";
+}
+
+var inmenu=false, todel=false, bgs, fg, music, els, bts, btnx, focused, btncont;
+function step0(){
+    todel=false;
+
+    fg = document.getElementById("window");
+    fg.style.position = "fixed";
+    fg.innerHTML = '<br><h1>WELCOME TO EZ PDF EDITOR!</h1><br><p>CLICK START TO START THE TUTORIAL</p><button onclick="start1(1)">START</button>';
+    fg.style.width = "";
+    fg.style.height = ""
+    fg.style.top = "";
+    fg.style.left = ""
+    fg.style.transitionTimingFunction = "cubic-bezier(0.91, 0, 0.64, 1.82)" //"cubic-bezier(1, 0.29, 0.52, 2.32)";
+    fg.style.visibility = "visible";
+    fg.style.top = "12.5%";
+    blur(focused);
+
+    if(inmenu)return;
+    setTimeout(unlock, 500);
+    inmenu = true;
+    btnx = document.getElementById("x");
+    btnx.addEventListener('click', closetut);
+    bgs = document.getElementById("bgscr");
+    bgs.style.visibility = "visible";
+    bgs.style.top = "0";
+    els = document.getElementsByClassName("ellipse");
+    btncont = document.getElementById("container");
+    bts = container.getElementsByTagName("button");
+}
+var animstarted=false;
+function startAnim(){
+    if(animstarted)return;
+    animstarted=true;
+    fg.classList.add('start');
+    for(let i=0;i<els.length;++i) els[i].classList.add("start");
+    music = new Audio("/static/Legendary.mp3");
+    music.loop = true;
+    music.volume = .3;
+    music.play();
+}
+function closetut(){
+    animstarted=false;
+    if(!inmenu)return;
+    fg.style.transitionTimingFunction = "cubic-bezier(0.26,-1.23, 0.08, 1.42)";
+    fg.classList.remove('start');
+    fg.style.top = "-100%";
+    setTimeout(() => {
+        fg.style.left = "";
+        fg.style.width = "";
+        fg.style.height = "";
+    },250);
+    bgs.style.top = "100%";
+    fg.style.visibility = "hidden";
+    bgs.style.visibility = "hidden";
+    for(let i=0;i<els.length;++i) els[i].classList.remove("start");
+    if (music !== undefined) music.src=""; //music.pause();
+    inmenu = false;
+    blur(focused);
+    if(todel)del(im2.length-1);
+    btncont.style.bottom = "";
+    for(let i=0;i<bts.length;++i) bts[i].style.opacity = "";
+    localStorage.setItem("pro1", "True");
+}
+function start(){
+    let navbtns = fg.getElementsByTagName("button");
+    for(let i=0;i<navbtns.length;++i)navbtns[i].disabled = true;
+    let elems = fg.children;
+    for(let i=0;i<elems.length;++i) {elems[i].style.opacity = 0; elems[i].style.cursor = "auto"}
+}
+function start1(n){
+    start();
+    setTimeout(()=>eval("step"+parseInt(n)+"()"), 500);
+    setTimeout(unlock, 2000);
+}
+function step1(){
+    startAnim();
+    blur(focused);
+    fg.style.position = "";
+    fg.style.transitionTimingFunction = "cubic-bezier(0.85, 0.07, 0.13, 0.99)";
+    fg.style.width = "800px";
+    fg.style.height = "250px";
+    fg.style.top = "200px";
+    fg.style.left = "100px";
+    fg.innerHTML = '<h1 class="fadein">INPUT SLIDES</h1><p class="fadein">HERE ARE THE SLIDES FROM THE UPLOADED PDF<br>TO INSERT A PAGE YOU NEED TO DOUBLECLICK</p><button class="fadein" onclick="start1(2)">NEXT</button><button class="fadein back" onclick="start1(0)">BACK</button>';
+    setTimeout(()=>focus(im[0]), 1000);
+    if(todel)del(im2.length-1);todel=false;
+    div1.scrollTo(0, 0);
+}
+function step2(){
+    blur(focused);
+    if(im2.length == 0){let ev={};ev.target=im[0];imgDblClick(ev, false);todel=true;}
+    fg.style.width = "900px";fg.style.left = "150px";fg.style.height = "350px";fg.style.top = "200px";
+    fg.innerHTML = '<h1 class="fadein">OUTPUT SLIDES</h1><p class="fadein">HERE ARE THE SLIDES FROM THE OUTPUT PDF<br>IF YOU WANT TO DELETE A PAGE YOU NEED TO DOUBLECLICK<br>IF YOU WANT TO MOVE A PAGE, YOU NEED TO SELECT (CLICK) IT, THEN USE THE RIGHT AND LEFT ARROW KEYS.</p><button class="fadein" onclick="start1(3)">NEXT</button><button class="fadein back" onclick="start1(1)">BACK</button>';
+    setTimeout(()=>focus(im2[0]), 1000);
+    btncont.style.bottom = "";
+}
+function step3(){
+    blur(focused);
+    if(todel)del(im2.length-1);todel=false;
+    fg.style.top = "calc(100% - 24em)";fg.style.width = "800px";fg.style.height = "250px";fg.style.left = "150px";
+    fg.innerHTML = '<h1 class="fadein">TASKBAR</h1><p class="fadein">HERE YOU FIND LOT OF USEFUL TOOLS</p><button class="fadein" onclick="start1(4)">NEXT</button><button class="fadein back" onclick="start1(2)">BACK</button>';
+    btncont.style.bottom = "0px";
+    setTimeout(()=>focus(btncont), 1000);
+    for(let i=0;i<bts.length;++i) bts[i].style.opacity = "";
+}
+function step4(){
+    blurbtns();
+    fg.style.height = "125px";fg.style.top = "calc(100% - 24em)";fg.style.width = "800px";fg.style.left = "150px";
+    setTimeout(()=>{focusbtn(0);focusbtn(1)}, 1000);
+    fg.innerHTML = '<h1 class="fadein">ROTATE PAGE</h1><button class="fadein" onclick="start1(5)">NEXT</button><button class="fadein back" onclick="start1(3)">BACK</button>';
+}
+function step5(){
+    blurbtns();
+    fg.style.height = "200px";fg.style.top = "calc(100% - 24em)";fg.style.width = "800px";fg.style.left = "150px";
+    setTimeout(()=>focusbtn(2), 1000);
+    fg.innerHTML = '<h1 class="fadein">RESTORE ALL PAGES</h1><p class="fadein">DISCARD ALL CHANGES</p><button class="fadein" onclick="start1(6)">NEXT</button><button class="fadein back" onclick="start1(4)">BACK</button>';
+}
+function step6(){
+    blurbtns();
+    fg.style.height = "125px";fg.style.top="calc(100% - 16.5em)";fg.style.width = "800px";fg.style.left = "150px";
+    setTimeout(()=>{focusbtn(3);focusbtn(4)}, 1000);
+    fg.innerHTML = '<h1 class="fadein">INSERT OR DELETE ALL PAGES</h1><button class="fadein" onclick="start1(7)">NEXT</button><button class="fadein back" onclick="start1(5)">BACK</button>';
+}
+function step7(){
+    blurbtns();
+    fg.style.height = "200px";fg.style.top="calc(100% - 14em)";fg.style.width = "800px";fg.style.left = "150px";
+    setTimeout(()=>focusbtn(5), 1000);
+    fg.innerHTML = '<h1 class="fadein">EDIT TEXT ON CURENT PAGE</h1><p class="fadein">OPEN PAGE ON A NEW WINDOW</p><button class="fadein" onclick="start1(8)">NEXT</button><button class="fadein back" onclick="start1(6)">BACK</button>';
+}
+function step8(){
+    btncont.style.bottom = "0px";
+    blur(focused);
+    focus(btncont);
+    blurbtns();
+    fg.style.height = "125px";fg.style.top="calc(100% - 10em)";fg.style.width = "800px";fg.style.left = "150px";
+    setTimeout(()=>focusbtn(6), 1000);
+    fg.innerHTML = '<h1 class="fadein">EXPORT TO PDF</h1><button class="fadein" onclick="start1(9)">NEXT</button><button class="fadein back" onclick="start1(7)">BACK</button>';
+}
+function step9(){
+    for(let i=0;i<bts.length;++i) bts[i].style.opacity = "";
+    blur(focused);
+    btncont.style.bottom = "";
+    fg.style.height = "250px";fg.style.top="25px";fg.style.width = "800px";fg.style.left = "calc(50% - 400px)";
+    setTimeout(()=>focus(div3), 1000);
+    fg.innerHTML = '<h1 class="fadein">PAGE PREVIEW</h1><p class="fadein">IF YOU HOLD DOWN THE LEFT MOUSE BUTTON, YOU CAN ZOOM IN.</p><button class="fadein" onclick="closetut()">FINISH</button><button class="fadein back" onclick="start1(8)">BACK</button>';
+}
+function focus(elem){
+    focused=elem;
+    elem.style.pointerEvents = "none";
+    elem.classList.add("fadeinfast");
+    elem.style.zIndex = "2";
+}
+function blurbtns(){
+    for(let i=0;i<bts.length;++i) bts[i].style.opacity = .3;
+}
+function focusbtn(index){
+    bts[index].style.opacity = 1;
+}
+function blur(elem){
+    if(elem==undefined)return;
+    elem.style.pointerEvents = "";
+    elem.classList.remove("fadeinfast");
+    elem.style.zIndex = "";
+    if(elem == focused)focused=undefined;
+}
+</script>
+</head>
+<body>
+    <div id="div1"></div>
+    <div id="div2"></div>
+    <div id="div3">
+        <img id="big" />
+    </div>
+    <span id="btnplus"></span>
+    <div id="container">
+        <div class="container2"><button id="btn7">&#10226;</button><button id="btn6">&#10227;</button></div>
+        <button id="btn5">RESTORE</button>
+        <button id="btn3">DELETE ALL</button>
+        <button id="btn4">INSERT ALL</button>
+        <button id="btn2">EDIT PAGE</button>
+        <button id="btn">EXPORT</button>
+    </div>
+    <div id="bgscr">
+        <span class="ellipse" style="--sleep: 1;--cx: 10%; --cy: 10%;"></span>
+        <span class="ellipse" style="--sleep: 2;--cx: 50%; --cy: 10%;"></span>
+        <span class="ellipse" style="--sleep: 3;--cx: 10%; --cy: 50%;"></span>
+        <span class="ellipse" style="--sleep: 4;--cx: 90%; --cy: 50%;"></span>
+        <span class="ellipse" style="--sleep: 5;--cx: 50%; --cy: 90%;"></span>
+        <span class="ellipse" style="--sleep: 6;--cx: 90%; --cy: 10%;"></span>
+        <span class="ellipse" style="--sleep: 7;--cx: 10%; --cy: 90%;"></span>
+        <span class="ellipse" style="--sleep: 8;--cx: 90%; --cy: 90%;"></span>
+        <span id="x"></span>
+    </div>
+    <div id="window"></div>
+    <a onclick="help()">
+        <svg width="32" height="32" viewBox="0 0 16 16">
+            <circle cx="8" cy="8" r="7" stroke="#fff" stroke-width="2" fill="transparent" />
+            <text x="5.3" y="12" fill="#fff" style="font-size: 12px;font-weight:bold;font-family:Ubuntu">?</text>
+        </svg>
+    </a>
+</body>
+</html>

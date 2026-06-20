@@ -1,0 +1,206 @@
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>PDF</title>
+<style>
+@font-face {
+  font-family: 'olympusmount';
+  src: url('/static/Olympus_Mount.ttf');
+}
+body{
+	background: #0a005f;
+}
+*::selection {
+  background-color: yellow;
+  color: black;
+}
+*{
+	color: white;
+	font-family: olympusmount;
+}
+h1{
+	font-size: 5em;
+	text-align: center;
+}
+#container{
+	display: block;
+	width: 25em;
+	height: 25em;
+	background: rgb(255,255,255,0.1);
+	border-top-right-radius: 1em;
+	border-top-left-radius: 1em;
+	border-bottom-right-radius: 1em;
+	border-bottom-left-radius: 1em;
+	border: dashed 0.75em white;
+	position: absolute;
+	right: 1em;
+	bottom: 1em;
+	cursor: pointer;
+	transition: 0.1s;
+}
+#felhocske{
+	z-index: -1;
+	filter: invert(1);
+	background: url("/static/cloud.png");
+	opacity: 0.75;
+	width: 10em;
+	height: 10em;
+	background-size: 10em 10em;
+	position: absolute;
+	top: calc(50% - 5em);
+	left: calc(50% - 5em);
+	transition: 0.1s;
+}
+#container:hover{
+	background: rgb(0,0,0,0.1);
+}
+#container.active{
+	background: rgb(255,255,255,0.3);
+	border-style: solid;
+}
+#felhocske.active{
+	background-size: 15em 7em;
+	width: 15em;
+	height: 7em;
+	left: calc(50% - 7.5em);
+	top: calc(50% - 3.5em);
+}
+input[type="file"]{
+	visibility: hidden;
+}
+#loading{
+    height: 5rem;
+    width: 25rem;
+    position: absolute;
+    top: calc(50% - 2.5rem);
+    left: calc(50% - 12.5rem);
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 1s, visibility 1s;
+}
+.dot{
+    position: absolute;
+    background: aqua;
+    border-radius: 50%;
+    top: 2em;
+    left: calc(1em + calc(var(--nr) * 20%));
+    animation: loading;
+    animation-duration: 0.5s;
+    animation-iteration-count: infinite;
+    animation-delay: calc(var(--nr) * 0.1s);
+    animation-direction: alternate;
+    animation-timing-function: ease-in-out;
+}
+
+@keyframes loading{
+    from{
+        width: 1em;
+        height: 1em;
+
+    }
+    to{
+        width: 2em;
+        height: 2em;
+    }
+}
+.ad{
+    position: fixed;
+    bottom: 0;
+    left: 0;
+}
+.ad:hover{
+    filter: hue-rotate(180deg);
+}
+</style>
+<script>
+var c, f, i;
+window.addEventListener('load', () => {
+	c = document.getElementById("container");
+	f = document.getElementById("felhocske");
+	i = document.getElementById("files");
+	c.addEventListener('click', () => {
+		i.click();
+	});
+	c.addEventListener('dragover', e => {
+		e.preventDefault();
+		c.classList.add("active");
+		f.classList.add("active");
+	});
+	c.addEventListener('dragleave', () => {
+		c.classList.remove("active");
+		f.classList.remove("active");
+	});
+	c.addEventListener('drop', e => {
+		e.preventDefault();
+		let files = e.dataTransfer.files;
+		c.classList.remove("active");
+		f.classList.remove("active");
+		if(!verify(files))return;
+		c.remove();
+		send(files);
+	});
+	i.addEventListener('change', e => {
+		let files = e.target.files;
+		c.classList.remove("active");
+		f.classList.remove("active");
+		if(!verify(files))return;
+		c.remove();
+		send(files);
+	});
+});
+function send(files){
+    startAnimation();
+	console.log(files);
+	const data = new FormData();
+	for(let file of files){
+		data.append('upload[]', file, file.name);
+	}
+	fetch("/upload", {
+		method: 'POST',
+		body: data,
+	}).then(r => {return r.json();})
+	.then(data => {
+		console.log(data);
+		if(data["error"] == 0){
+			window.location.assign ("/project/" + data["id"]);
+		}
+        else{
+            alert(JSON.stringify(data));
+            location.reload();
+        }
+	});
+}
+function verify(files){
+	for(let i=0;i<files.length;++i){
+		if(files[i].type !== "application/pdf"){
+			alert("All uploaded files need to bee PDF format.");
+			return false;
+		}
+	}
+	return files.length;
+}
+function startAnimation(){
+    c.style.pointerEvents = 'none';
+    c.style.opacity = 0;
+    c.style.visibility = 'hidden';
+    loading.style.opacity = 1;
+    loading.style.visibility = 'visible';
+    document.body.style.cursor = 'wait';
+}
+</script>
+</head>
+<body>
+    <h1>EZ PDF EDITOR 2.0 WEB</h1>
+    <div id="container">
+		<div id="felhocske"></div>
+	</div>
+	<input type="file" id="files" multiple accept="application/pdf" />
+    <div id="loading">
+        <div style="--nr: 0;" class="dot"></div>
+        <div style="--nr: 1;" class="dot"></div>
+        <div style="--nr: 2;" class="dot"></div>
+        <div style="--nr: 3;" class="dot"></div>
+        <div style="--nr: 4;" class="dot"></div>
+    </div>
+</body>
+</html>

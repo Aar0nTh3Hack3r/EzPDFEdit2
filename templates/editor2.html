@@ -1,0 +1,377 @@
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>Editor</title>
+<style>
+body{
+	background: #0a005f;
+}
+@font-face {
+  font-family: 'Inconsolata-ExtraLight';
+  src: url('/static/Inconsolata/ExtraLight.ttf');
+}
+@font-face {
+  font-family: 'Inconsolata-Light';
+  src: url('/static/Inconsolata/Light.ttf');
+}
+@font-face {
+  font-family: 'Inconsolata-Regular';
+  src: url('/static/Inconsolata/Regular.ttf');
+}
+@font-face {
+  font-family: 'Inconsolata-Medium';
+  src: url('/static/Inconsolata/Medium.ttf');
+}
+@font-face {
+  font-family: 'Inconsolata-Bold';
+  src: url('/static/Inconsolata/Bold.ttf');
+}
+@font-face {
+  font-family: 'Inconsolata-SemiBold';
+  src: url('/static/Inconsolata/SemiBold.ttf');
+}
+@font-face {
+  font-family: 'Inconsolata-ExtraBold';
+  src: url('/static/Inconsolata/ExtraBold.ttf');
+}
+@font-face {
+  font-family: 'Inconsolata-Black';
+  src: url('/static/Inconsolata/Black.ttf');
+}
+@font-face {
+  font-family: 'OlympusMount';
+  src: url('/static/Olympus_Mount.ttf');
+}
+#popup{background:#0768dd;white-space:nowrap;color:#110065;user-select:none;width:15rem;height:25rem;position:fixed;z-index:1;}
+#popup *{font-size:20px;}
+#move{background:green;color:white;width:15rem;height:3rem;position:fixed;z-index:1;cursor:move;}
+#move::after{content:'SETTINGS';font-size:20px;font-family:'OlympusMount';position:absolute;right:1rem;top:.5rem;}
+#move > button{font-size:1rem;width:2rem;height:2rem;position:absolute;top:.5rem;left:calc(calc(2.2rem * var(--nr)) + .22rem);cursor:pointer;user-select:none;border:solid 1px black;background:transparent;color:white;}
+#move > button:hover{background:rgb(0,0,255,.3);}
+#move > button:active, #move > button:focus{background:rgb(0,0,100);}
+#range{width:60%;}
+#number{width:30%;background:lightblue;border-radius:5px;}
+#color{position:relative;left:17px;border-radius:5px;}
+#text{width:100%;background:lightblue;border-radius:5px;}
+#ins{position:absolute;bottom:0px;left:0px;font-size:25px;}
+#del{position:absolute;bottom:0px;right:0px;font-size:25px;}
+#font{width:100%;background:lightblue;border-radius:5px;}
+option{background:lightblue}
+
+</style>
+<script>
+    var saved = false;
+    var movestart = false, moveX=0, moveY=0, windX=Infinity, windY=0;
+    var popup, move;
+    window.elems = [[],[]];
+    var elem = false
+    var mouse = false;
+    var can, ctx;
+    var text, range, number, color, select, btninsert, btndelete;
+
+    const l = location.pathname.split('/');
+    l[1] = "project";
+    const img = new Image();
+    img.addEventListener('load', autorun);
+
+    if(window.pag1){
+        window.pag1.addEventListener('unload',() => {window.close()});
+        img.src = l.join('/');
+        //document.body.appendChild(img);
+    }else{
+        l.splice(l.length-2,1);
+        document.write('<center><h1><a style="color:white;" id="link">Error, pleaze open this page from "Editor". Thank you.</a></h1></center>');
+        document.getElementById('link').href = l.join('/');
+        window.stop();
+    }
+
+    function update(){
+        if (elems[0].length != elems[1].length){
+            console.error("SizeError: elems[0].length != elems[1].length");
+            return;
+        }
+        ctx.clearRect(0,0,can.width,can.height);
+        ctx.drawImage(img, 0, 0);
+        for(let i=0;i<elems[0].length;++i)
+            ctx[window.elems[0][i]](...window.elems[1][i], false);
+        if(elem){
+            ctx.drawText(window.txt, window.posX, window.posY, window.fontsize, window.font, window.fontcolor);
+        }
+    }
+
+    function autorun(){
+        //console.log(e.target);
+        can = document.createElement('canvas');
+        can.width = img.naturalWidth;
+        can.height = img.naturalHeight;
+        can.setAttribute('style', `--halfW:${img.naturalWidth / 2}px;--halfH:${img.naturalHeight / 2}px`);
+
+        const style = document.createElement("style");
+        document.head.appendChild(style);
+        style.innerHTML = `canvas{position:absolute;left:calc(50% - var(--halfW));top:calc(50% - var(--halfH));}
+@media screen and (max-width: ${img.naturalWidth}px) {
+  canvas {
+    left: 0px;
+  }
+}@media screen and (max-height: ${img.naturalHeight}px) {
+  canvas {
+    top: 0px;
+  }
+}`;
+        document.body.appendChild(can);
+        ctx = can.getContext('2d');
+        ctx.drawText = function(text, x, y, size, font, color, outline=true, fill=true){
+            var w = size/2*text.length, h = size/1.25;
+
+            this.beginPath();
+            this.fillStyle = "white";
+            this.strokeStyle = "black";
+            this.lineWidth = "1";
+            if(fill) this.fillRect(x, y, w, h)
+            if(outline) this.rect(x, y, w, h);
+            this.stroke();
+
+            this.font = `${size}px ${font}`;
+            this.fillStyle = color;
+            this.fillText(text, x, y+h);
+        }
+        setTimeout(() => {
+            ctx.drawText('a',0,0,1,'Inconsolata-ExtraLight','black',false,false);
+            ctx.drawText('a',0,0,1,'Inconsolata-Light','black',false,false);
+            ctx.drawText('a',0,0,1,'Inconsolata-Regular','black',false,false);
+            ctx.drawText('a',0,0,1,'Inconsolata-Medium','black',false,false);
+            ctx.drawText('a',0,0,1,'Inconsolata-Bold','black',false,false);
+            ctx.drawText('a',0,0,1,'Inconsolata-SemiBold','black',false,false);
+            ctx.drawText('a',0,0,1,'Inconsolata-ExtraBold','black',false,false);
+            ctx.drawText('a',0,0,1,'Inconsolata-Black','black',false,false);
+        },50);
+
+        window.posX = 0;
+        window.posY = 0;
+        function setXY(e){
+            const dim = can.getBoundingClientRect();
+            window.posX = e.clientX - dim.left;
+            window.posY = e.clientY - dim.top;
+        }
+        
+        window.addEventListener('mouseup', () => {
+            mouse = false;
+            movestart = false;
+            popup.style.visibility = 'visible';
+            move.style.visibility = 'visible';
+            if(text !== undefined)text.focus();
+        });
+        can.addEventListener('mousedown', e => {
+            setXY(e);
+            elem = true;
+            mouse = true;
+            popup.style.visibility = 'hidden';
+            move.style.visibility = 'hidden';
+            btninsert.disabled = false;
+            btndelete.disabled = false;
+            update();
+        });
+        can.addEventListener('mousemove', e => {
+            if(!mouse)return;
+            setXY(e);
+            update();
+        });
+        //elems[0].push("drawImage");
+        //elems[1].push([img, 0, 0]);
+        openPopup();
+        update();
+    }
+
+function movePopup(x, y){
+    let w = popup.clientWidth;
+    let h = popup.clientHeight;
+    let w1 = move.clientWidth;
+    let h1 = move.clientHeight;
+    let left = x - moveX;
+    let up = y - moveY;
+    let ww = window.innerWidth;
+    let wh = window.innerHeight;
+    const margin = 25;
+    if(up < margin)
+        up = margin;
+    else if(up + h + h1 > wh - margin)
+        up = wh - margin - h - h1;
+    
+
+    if(left < margin)
+        left = margin;
+    else if(left + w > ww - margin)
+        left = ww - margin - w;
+
+    popup.style.left = left + "px";
+    popup.style.top =  up + h1 + "px";
+    move.style.left = left + "px";
+    move.style.top =  up + "px";
+}
+
+function save(){
+    if(!saved) fetch("export", {
+        method: 'POST', 
+        body: JSON.stringify(elems[1]),
+        headers: {
+            'Content-Type': 'application/json'
+            // 'Content-Type': 'application/x-www-form-urlencoded',
+        },
+    })
+    .then(r => {return r.json();})
+    .then(data => {
+        if(data['error'] == 0){
+            window.pag1.location.reload(true);
+            window.close();
+        }
+        else{
+            alert(JSON.stringify(data));
+        }
+    }).catch(e => alert(e + ""));
+    saved = true;
+}
+
+function undo(){
+    if(elem){
+        elem = false;
+        btninsert.disabled = true;
+        btndelete.disabled = true;
+    }else{
+        if(window.elems[0].length !== window.elems[1].length){
+            console.error("SizeError: elems[0].length != elems[1].length");
+            return;
+        }
+    if(window.elems[0].length == 0)return;
+        window.elems[0].splice(window.elems[0].length -1, 1);
+        window.elems[1].splice(window.elems[1].length -1, 1);
+    }
+    update();
+}
+
+function openPopup(){
+    window.cleartext = true;
+    window.txt = 'Simple Text'
+    window.fontsize = 25;
+    window.fontcolor = '#000000';
+    window.font = 'Inconsolata-Regular';
+
+    window.addEventListener('keydown', e => {
+        //console.log(e);
+        if(e.ctrlKey){
+            switch(e.key){
+                case 'z':
+                    undo();
+                    break
+
+                case 's':
+                    save();
+                    break;
+            }
+        }
+        if(e.key == 'Enter' && !btninsert.disabled) btninsert.click();
+    });
+
+    popup = document.getElementById('popup');
+    move = document.getElementById('move');
+
+    range = document.getElementById('range');
+    number = document.getElementById('number');
+    btninsert = document.getElementById('ins');
+    btndelete = document.getElementById('del');
+    text = document.getElementById('text');
+    color = document.getElementById('color');
+    select = document.getElementById('font');
+    function input(e){
+        switch(e.target){
+            case range:
+                number.value = range.value;
+                window.fontsize = parseInt(range.value);
+                break;
+            case number:
+                range.value = number.value;
+                window.fontsize = parseInt(number.value);
+                break;
+            case text:
+                if(window.cleartext){
+                    text.value = e.data;
+                    window.cleartext = false;
+                }
+                window.txt = text.value;
+                break;
+        }
+        update();
+    }
+    function click(e){
+        if(e.target == btninsert){
+            window.elems[0].push('drawText');
+            window.elems[1].push([window.txt, window.posX, window.posY, window.fontsize, window.font, window.fontcolor]);
+        }
+        elem = false;
+        btninsert.disabled = true;
+        btndelete.disabled = true;
+        update();
+    }
+    function change(e){
+        switch(e.target){
+            case color:
+                window.fontcolor = color.value;
+                break;
+            case select:
+                window.font = select.value; //select.options[select.selectedIndex].value;
+                break;
+        }
+        update();
+    }
+    range.addEventListener('input', input);
+    number.addEventListener('input', input);
+    text.addEventListener('input', input);
+    btninsert.addEventListener('click', click);
+    btndelete.addEventListener('click', click);
+    select.addEventListener('change', change);
+    color.addEventListener('input', change);
+
+    move.addEventListener('mousedown', e => {
+        if(e.target !== move) return;
+        var dim = move.getBoundingClientRect();
+        moveX = e.clientX - dim.left;
+        moveY = e.clientY - dim.top;
+        movestart = true;
+    });
+    window.addEventListener('mousemove', e => {
+        if(!movestart) return;
+        windX = e.clientX;
+        windY = e.clientY;
+        movePopup(windX, windY);
+    });
+    window.addEventListener('resize', e => {
+        movePopup(windX, windY);
+    });
+}
+</script>
+</head>
+<body>
+    <div id="move" style="top:25px;left:calc(calc(100% - 25px) - 15rem);"><button style="--nr:0;" onclick="save();this.disabled=true;">&#128190;&#65039;</button><button style="--nr:1;" onclick="undo();">&larrhk;</button></div>
+    <div id="popup" style="top:calc(25px + 3rem);left:calc(calc(100% - 25px) - 15rem);">
+        <p>Font:</p>
+        <select id="font">
+            <option value="Inconsolata-ExtraLight">ExtraLight</option>
+            <option value="Inconsolata-Light">Light</option>
+            <option value="Inconsolata-Regular" selected>Regular</option>
+            <option value="Inconsolata-Medium">Medium</option>
+            <option value="Inconsolata-Bold">Bold</option>
+            <option value="Inconsolata-SemiBold">SemiBold</option>
+            <option value="Inconsolata-ExtraBold">ExtraBold</option>
+            <option value="Inconsolata-Black">Black</option>
+        </select>
+        <p>Text Size:</p>
+        <input id="range" type="range" min="5" max="50" value="25">
+        <input id="number" type="number" min="5" max="50" value="25">
+        <br>
+        <p>Text Color:&#32;<input id="color" type="color"></p>
+        <p>Text:</p>
+        <input id="text" type="text" value="Simple Text" placeholder="Text" autofocus autocomplete="off">
+        <br>
+        <button id="ins" disabled>Apply</button><button id="del" disabled>Delete</button>
+    </div>
+</body>
+</html>
